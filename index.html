@@ -21,9 +21,23 @@
 <body class="bg-gray-50 text-gray-800 pb-24">
 
     <div class="max-w-xl mx-auto p-4">
+        <!-- 動的ヘッダー -->
         <header class="mb-4 text-center">
-            <h1 class="text-xl font-bold text-gray-700">精算管理アプリ</h1>
-            <p class="text-xs text-gray-500">あきたとちーたのお金のやり取りを記録するアプリ</p>
+            <h1 id="header-title" class="text-xl font-bold text-gray-700">入力</h1>
+            <p id="header-subtitle" class="text-xs text-gray-500">出費を新規登録します。</p>
+            
+            <!-- 月切り替えナビゲーション（一覧画面表示時のみ表示） -->
+            <div id="month-nav" class="flex items-center justify-between mt-3 px-2" style="display: none;">
+                <button type="button" onclick="changeMonth(-1)" id="prev-month-btn" class="text-xs font-bold bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg shadow-sm">
+                    ◀︎ 前月
+                </button>
+                <button type="button" onclick="goCurrentMonth()" class="text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-lg shadow-sm">
+                    今月
+                </button>
+                <button type="button" onclick="changeMonth(1)" id="next-month-btn" class="text-xs font-bold bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg shadow-sm">
+                    次月 ▶︎
+                </button>
+            </div>
         </header>
 
         <!-- ローディング表示 -->
@@ -31,17 +45,16 @@
 
         <!-- 左右スワイプを検知するコンテナ -->
         <div id="swipe-container">
-            <!-- 【画面1】入力・編集画面 -->
+            <!-- 【画面1】新規入力画面 -->
             <div id="view-input" class="space-y-4">
                 <div class="bg-white p-4 rounded-xl shadow-sm space-y-3">
-                    <h2 id="form-title" class="text-xs font-bold text-blue-600 mb-2">新規データ登録画面</h2>
-                    <input type="hidden" id="edit-id" value="">
+                    <h2 class="text-xs font-bold text-blue-600 mb-2">新規データ登録画面</h2>
                     
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">日付（任意）</label>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">日付</label>
                         <div class="relative">
                             <input type="date" id="date" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" onchange="document.getElementById('date-display').value = this.value;">
-                            <input type="text" id="date-display" readonly class="w-full box-border border rounded-lg px-3 py-2 text-sm bg-white pointer-events-none" placeholder="日付を選択（任意）">
+                            <input type="text" id="date-display" readonly class="w-full box-border border rounded-lg px-3 py-2 text-sm bg-white pointer-events-none" placeholder="日付を選択">
                         </div>
                     </div>
                     <div>
@@ -81,20 +94,13 @@
                     </div>
                     
                     <!-- 登録ボタン -->
-                    <button type="button" onclick="saveItem()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow hover:bg-blue-700 transition text-sm">決定</button>
-                    
-                    <!-- 削除ボタン -->
-                    <button type="button" id="delete-btn-in-form" onclick="deleteCurrentEditItem()" class="w-full bg-white border border-red-500 text-red-500 font-bold py-3 rounded-xl hover:bg-red-50 transition text-sm" style="display: none;">削除</button>
+                    <button type="button" onclick="saveItem(false)" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow hover:bg-blue-700 transition text-sm">決定</button>
                 </div>
                 <img src="favicon.png" alt="ファビコン" style="border-radius: 6px;">
             </div>
 
             <!-- 【画面2】一覧・精算結果画面 -->
             <div id="view-list" class="space-y-6" style="display: none;">
-                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center space-y-1 shadow-sm">
-                    <span class="text-xs text-emerald-700 font-bold">精算結果</span>
-                    <div id="result-text" class="text-base font-bold text-gray-800">計算中...</div>
-                </div>
 
                 <!-- ちーたの表 -->
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
@@ -147,15 +153,83 @@
                         請求額合計: <span id="akita-total" class="font-bold text-blue-600 text-sm">¥0</span>
                     </div>
                 </div>
+
+                <!-- 一番下に移動した精算結果（赤系デザインへ変更） -->
+                <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl text-center space-y-1 shadow-sm">
+                    <span class="text-xs text-rose-700 font-bold">精算結果</span>
+                    <div id="result-text" class="text-base font-bold text-gray-800">計算中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編集用ポップアップ（モーダル） -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white w-full max-w-md rounded-xl p-4 shadow-xl space-y-3 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h2 class="text-xs font-bold text-blue-600">データ修正画面</h2>
+                <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 font-bold text-base px-1">&times;</button>
+            </div>
+            
+            <input type="hidden" id="edit-id" value="">
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">日付</label>
+                <div class="relative">
+                    <input type="date" id="modal-date" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" onchange="document.getElementById('modal-date-display').value = this.value;">
+                    <input type="text" id="modal-date-display" readonly class="w-full box-border border rounded-lg px-3 py-2 text-sm bg-white pointer-events-none" placeholder="日付を選択">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">項目名</label>
+                <select id="modal-title" class="w-full border rounded-lg p-2 text-sm bg-white">
+                    <option value="食費">食費</option>
+                    <option value="日用品">日用品</option>
+                    <option value="雑貨">雑貨</option>
+                    <option value="交際費">交際費</option>
+                    <option value="外食">外食</option>
+                    <option value="固定費">固定費</option>
+                    <option value="その他">その他</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">支払った人</label>
+                <select id="modal-payer" class="w-full border rounded-lg p-2 text-sm bg-white">
+                    <option value="ちーた">ちーた</option>
+                    <option value="あきた">あきた</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">金額 (円)</label>
+                <input type="number" id="modal-amount" placeholder="0" class="w-full border rounded-lg p-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">相手への請求割合</label>
+                <select id="modal-ratio" class="w-full border rounded-lg p-2 text-sm bg-white">
+                    <option value="0.5" selected>50%</option>
+                    <option value="1">100%</option>
+                    <option value="0.33">33%</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">支払い先など</label>
+                <input type="text" id="modal-memo" placeholder="例：マルエツ中野若宮店" class="w-full border rounded-lg p-2 text-sm">
+            </div>
+            
+            <div class="space-y-2 pt-1">
+                <!-- 更新ボタン -->
+                <button type="button" onclick="saveItem(true)" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow hover:bg-blue-700 transition text-sm">更新</button>
+                <!-- 削除ボタン -->
+                <button type="button" onclick="deleteCurrentEditItem()" class="w-full bg-white border border-red-500 text-red-500 font-bold py-2.5 rounded-xl hover:bg-red-50 transition text-sm">削除</button>
             </div>
         </div>
     </div>
 
     <!-- LINE風 下部固定タブバー -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg flex justify-around py-2 z-50 max-w-xl mx-auto">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg flex justify-around py-2 z-40 max-w-xl mx-auto">
         <button type="button" id="tab-input" onclick="switchTab('input')" class="flex-1 flex flex-col items-center justify-center py-1 text-blue-600 font-bold transition">
             <svg class="w-6 h-6 mb-0.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span class="text-[10px] pointer-events-none">入力・編集</span>
+            <span class="text-[10px] pointer-events-none">入力</span>
         </button>
         <button type="button" id="tab-list" onclick="switchTab('list')" class="flex-1 flex flex-col items-center justify-center py-1 text-gray-400 font-bold transition">
             <svg class="w-6 h-6 mb-0.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"></path></svg>
@@ -167,14 +241,43 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyor_lx9N-JZJuXknKI1DLCboIOK39f8WlX6R8s47e4n2jkf9vzMbauCDqYAoRUig/exec"; 
         let items = [];
 
-        // 初期設定（日付は任意入力化のため自動設定を削除）
+        // 現在選択中の年月管理（デフォルト：今月）
+        const now = new Date();
+        let currentYear = now.getFullYear();
+        let currentMonth = now.getMonth() + 1;
+
         fetchData();
+
+        function updateHeaderUI(tabName) {
+            const headerTitle = document.getElementById('header-title');
+            const headerSubtitle = document.getElementById('header-subtitle');
+            const monthNav = document.getElementById('month-nav');
+
+            if (tabName === 'input') {
+                headerTitle.innerText = '入力';
+                headerSubtitle.innerText = '出費を新規登録します。';
+                monthNav.style.display = 'none';
+            } else {
+                headerTitle.innerText = `${currentMonth}月精算一覧`;
+                headerSubtitle.innerText = `${currentYear}年${currentMonth}月の精算データの一覧です。`;
+                
+                // ボタンのテキスト更新（前月・次月）
+                const prevM = currentMonth === 1 ? 12 : currentMonth - 1;
+                const nextM = currentMonth === 12 ? 1 : currentMonth + 1;
+                document.getElementById('prev-month-btn').innerText = `◀︎ ${prevM}月`;
+                document.getElementById('next-month-btn').innerText = `▶︎ ${nextM}月`;
+                
+                monthNav.style.display = 'flex';
+            }
+        }
 
         function switchTab(tabName) {
             const viewInput = document.getElementById('view-input');
             const viewList = document.getElementById('view-list');
             const tabInput = document.getElementById('tab-input');
             const tabList = document.getElementById('tab-list');
+
+            updateHeaderUI(tabName);
 
             if (tabName === 'input') {
                 viewInput.style.display = 'block';
@@ -188,6 +291,27 @@
                 tabInput.className = "flex-1 flex flex-col items-center justify-center py-1 text-gray-400 font-bold transition";
                 fetchData();
             }
+        }
+
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear++;
+            } else if (currentMonth < 1) {
+                currentMonth = 12;
+                currentYear--;
+            }
+            updateHeaderUI('list');
+            renderList();
+        }
+
+        function goCurrentMonth() {
+            const today = new Date();
+            currentYear = today.getFullYear();
+            currentMonth = today.getMonth() + 1;
+            updateHeaderUI('list');
+            renderList();
         }
 
         // 左右スワイプ（タッチ操作）の検知処理
@@ -244,32 +368,37 @@
                 });
         }
 
+        // モーダルを開いて編集データをセット
         function editItem(id) {
             const item = items.find(i => String(i.id) === String(id));
             if (!item) return;
 
             document.getElementById('edit-id').value = item.id;
-            document.getElementById('form-title').innerText = 'データ修正画面';
-            document.getElementById('date').value = item.date || '';
-            document.getElementById('date-display').value = item.date || '';
-            document.getElementById('title').value = item.title;
-            document.getElementById('payer').value = item.payer;
-            document.getElementById('amount').value = item.amount;
-            document.getElementById('ratio').value = item.ratio;
-            document.getElementById('memo').value = item.memo;
-            document.getElementById('delete-btn-in-form').style.display = 'block';
+            document.getElementById('modal-date').value = item.date || '';
+            document.getElementById('modal-date-display').value = item.date || '';
+            document.getElementById('modal-title').value = item.title;
+            document.getElementById('modal-payer').value = item.payer;
+            document.getElementById('modal-amount').value = item.amount;
+            document.getElementById('modal-ratio').value = item.ratio;
+            document.getElementById('modal-memo').value = item.memo;
 
-            switchTab('input');
+            document.getElementById('edit-modal').style.display = 'flex';
         }
 
-        function saveItem() {
-            const editId = document.getElementById('edit-id').value;
-            const date = document.getElementById('date').value;
-            const title = document.getElementById('title').value;
-            const payer = document.getElementById('payer').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const ratio = parseFloat(document.getElementById('ratio').value);
-            const memo = document.getElementById('memo').value.trim();
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            document.getElementById('edit-id').value = '';
+        }
+
+        function saveItem(isModal = false) {
+            const prefix = isModal ? 'modal-' : '';
+            const editId = isModal ? document.getElementById('edit-id').value : '';
+            const date = document.getElementById(prefix + 'date').value;
+            const title = document.getElementById(prefix + 'title').value;
+            const payer = document.getElementById(prefix + 'payer').value;
+            const amount = parseFloat(document.getElementById(prefix + 'amount').value);
+            const ratio = parseFloat(document.getElementById(prefix + 'ratio').value);
+            const memo = document.getElementById(prefix + 'memo').value.trim();
 
             if (title === '固定費' && !memo) {
                 alert('固定費の場合は「支払い先など」を入力してください。');
@@ -294,13 +423,16 @@
             .then(res => res.json())
             .then(() => {
                 loading.style.display = 'none';
-                document.getElementById('edit-id').value = '';
-                document.getElementById('form-title').innerText = '新規データを登録';
-                document.getElementById('amount').value = '';
-                document.getElementById('memo').value = '';
-                document.getElementById('date').value = '';
-                document.getElementById('date-display').value = '';
-                document.getElementById('delete-btn-in-form').style.display = 'none';
+                
+                if (isModal) {
+                    closeEditModal();
+                } else {
+                    document.getElementById('amount').value = '';
+                    document.getElementById('memo').value = '';
+                    document.getElementById('date').value = '';
+                    document.getElementById('date-display').value = '';
+                }
+                
                 switchTab('list');
             })
             .catch(err => {
@@ -325,13 +457,7 @@
                 .then(res => res.json())
                 .then(() => {
                     loading.style.display = 'none';
-                    document.getElementById('edit-id').value = '';
-                    document.getElementById('form-title').innerText = '新規データを登録';
-                    document.getElementById('amount').value = '';
-                    document.getElementById('memo').value = '';
-                    document.getElementById('date').value = '';
-                    document.getElementById('date-display').value = '';
-                    document.getElementById('delete-btn-in-form').style.display = 'none';
+                    closeEditModal();
                     switchTab('list');
                 })
                 .catch(err => {
@@ -393,11 +519,22 @@
                 return a.date.localeCompare(b.date);
             };
 
-            const chitaVariable = items.filter(i => i.payer === 'ちーた' && i.title !== '固定費').sort(sortByDate);
-            const chitaFixed = items.filter(i => i.payer === 'ちーた' && i.title === '固定費').sort(sortByDate);
+            // 選択中の年月に当てはまるデータのみ抽出（日付未登録は現在の月で集計対象に含める、または年・月が一致するもの）
+            const targetMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+            const filteredItems = items.filter(item => {
+                if (!item.date) {
+                    // 日付がないものは選択中の月が今月であれば表示対象とする
+                    const today = new Date();
+                    return today.getFullYear() === currentYear && (today.getMonth() + 1) === currentMonth;
+                }
+                return item.date.startsWith(targetMonthStr);
+            });
 
-            const akitaVariable = items.filter(i => i.payer === 'あきた' && i.title !== '固定費').sort(sortByDate);
-            const akitaFixed = items.filter(i => i.payer === 'あきた' && i.title === '固定費').sort(sortByDate);
+            const chitaVariable = filteredItems.filter(i => i.payer === 'ちーた' && i.title !== '固定費').sort(sortByDate);
+            const chitaFixed = filteredItems.filter(i => i.payer === 'ちーた' && i.title === '固定費').sort(sortByDate);
+
+            const akitaVariable = filteredItems.filter(i => i.payer === 'あきた' && i.title !== '固定費').sort(sortByDate);
+            const akitaFixed = filteredItems.filter(i => i.payer === 'あきた' && i.title === '固定費').sort(sortByDate);
 
             let chitaCredit = 0;
             let akitaCredit = 0;
@@ -443,9 +580,9 @@
             const resultText = document.getElementById('result-text');
 
             if (diff > 0) {
-                resultText.innerHTML = `あきたがちーたに <span class="text-emerald-700 font-extrabold text-lg">¥${Math.round(diff).toLocaleString()}</span> 支払う`;
+                resultText.innerHTML = `あきたがちーたに <span class="text-rose-700 font-extrabold text-lg">¥${Math.round(diff).toLocaleString()}</span> 支払う`;
             } else if (diff < 0) {
-                resultText.innerHTML = `ちーたがあきたに <span class="text-emerald-700 font-extrabold text-lg">¥${Math.round(Math.abs(diff)).toLocaleString()}</span> 支払う`;
+                resultText.innerHTML = `ちーたがあきたに <span class="text-rose-700 font-extrabold text-lg">¥${Math.round(Math.abs(diff)).toLocaleString()}</span> 支払う`;
             } else {
                 resultText.innerHTML = `現在、精算の差額はありません`;
             }
