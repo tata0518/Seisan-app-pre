@@ -62,8 +62,10 @@
         </header>
 
         <!-- ローディング表示 -->
-        <div id="loading" class="text-center py-2 text-xs text-gray-600 font-bold" style="display: none;">通信中</div>
-
+        <div id="loading" class="text-center w-full my-4">
+            <img src="korokuri4.png" alt="コロクリ" class="inline-block rounded-md" width="150" height="30">
+        </div>
+        
         <!-- 左右スワイプを検知するコンテナ -->
         <div id="swipe-container">
             <!-- 【画面1】新規入力画面 -->
@@ -117,7 +119,6 @@
                     <!-- 登録ボタン -->
                     <button type="button" onclick="saveItem(false)" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow hover:bg-blue-700 transition text-sm">決定</button>
                 </div>
-                <img src="favicon.png" alt="ファビコン" style="border-radius: 6px;">
             </div>
 
             <!-- 【画面2】一覧・精算結果画面 -->
