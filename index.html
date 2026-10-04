@@ -20,6 +20,11 @@
         /* 入力フォーム選択時の自動ズームのみ防止（表やボタンのサイズに影響を与えないよう限定） */
         input:not([type="button"]):not([type="submit"]), select {
             font-size: 16px !important;
+
+        /* ▼ ここから追加（入力タブ時のスクロール不可設定） */
+        body.no-scroll {
+            overflow: hidden;
+            touch-action: none; /* スマホでの引っ張りスクロールなどを防止 */
         }
     </style>
 </head>
@@ -306,6 +311,9 @@
         const now = new Date();
         let currentYear = now.getFullYear();
         let currentMonth = now.getMonth() + 1;
+            // 310行目付近（fetchData(); の直前など）
+        document.body.classList.add('no-scroll'); // 初期状態（入力タブ）でスクロール禁止
+        fetchData();
 
         fetchData();
 
@@ -370,22 +378,30 @@
             const viewList = document.getElementById('view-list');
             const tabInput = document.getElementById('tab-input');
             const tabList = document.getElementById('tab-list');
-
+        
             updateHeaderUI(tabName);
-
+        
             if (tabName === 'input') {
                 viewInput.style.display = 'block';
                 viewList.style.display = 'none';
                 tabInput.className = "flex-1 flex flex-col items-center justify-center py-1 text-blue-600 font-bold transition";
                 tabList.className = "flex-1 flex flex-col items-center justify-center py-1 text-gray-400 font-bold transition";
+        
+                // ▼ 追加：入力タブの時はスクロール不可にする
+                document.body.classList.add('no-scroll');
             } else {
                 viewInput.style.display = 'none';
                 viewList.style.display = 'block';
                 tabList.className = "flex-1 flex flex-col items-center justify-center py-1 text-blue-600 font-bold transition";
                 tabInput.className = "flex-1 flex flex-col items-center justify-center py-1 text-gray-400 font-bold transition";
+        
+                // ▼ 追加：一覧タブの時はスクロールを許可する
+                document.body.classList.remove('no-scroll');
+        
                 fetchData();
             }
         }
+
 
         function changeMonth(delta) {
             currentMonth += delta;
