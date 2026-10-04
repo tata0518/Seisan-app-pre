@@ -546,10 +546,15 @@
                 return;
             }
 
-            if (isNaN(amount) || amount <= 0) {
-                alert('金額を正しく入力してください。');
+            // 金額、日付、メモのすべてが空（または金額が0以下かつメモも空）の場合のみ弾くように変更
+            const memoVal = document.getElementById(prefix + 'memo').value.trim();
+            const dateVal = document.getElementById(prefix + 'date').value;
+
+            if ((isNaN(amount) || amount <= 0) && !memoVal && !dateVal) {
+                alert('金額またはメモ・日付のいずれかを入力してください。');
                 return;
             }
+
 
             const id = editId ? editId : String(Date.now());
             const payload = { action: 'save', item: { id, date, title, payer, amount, ratio, memo } };
