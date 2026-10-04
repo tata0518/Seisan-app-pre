@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <link rel="icon" href="./favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="./favicon.png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精算管理アプリ</title>
+ 
+    <!-- ▼ ここからOGPタグを追加 -->
+    <meta property="og:title" content="精算管理アプリ（あきた＆ちーた）">
+    <meta property="og:description" content="2人の日々の支払いや精算を簡単に管理・共有できるアプリです。">
+    <meta property="og:type" content="website">
+    <!-- ▲ ここまで -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!-- 下部タブバーの分の余白 (pb-24) を確保 -->
+<body class="bg-gray-50 text-gray-800 pb-24">
+
+    <div class="max-w-xl mx-auto p-4">
+        <header class="mb-4 text-center">
+            <h1 class="text-xl font-bold text-gray-700">精算管理アプリ</h1>
+            <p class="text-xs text-gray-500">あきたとちーたのお金のやり取りを記録するアプリ</p>
+        </header>
+
+        <!-- ローディング表示 -->
+        <div id="loading" class="text-center py-2 text-xs text-gray-600 font-bold" style="display: none;">通信中</div>
+
+        <!-- 左右スワイプを検知するコンテナ -->
+        <div id="swipe-container">
+            <!-- 【画面1】入力・編集画面 -->
+            <div id="view-input" class="space-y-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm space-y-3">
+                    <h2 id="form-title" class="text-xs font-bold text-blue-600 mb-2">新規データ登録画面</h2>
+                    <input type="hidden" id="edit-id" value="">
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">日付（任意）</label>
+                        <div class="relative">
+                            <input type="date" id="date" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" onchange="document.getElementById('date-display').value = this.value;">
+                            <input type="text" id="date-display" readonly class="w-full box-border border rounded-lg px-3 py-2 text-sm bg-white pointer-events-none" placeholder="日付を選択（任意）">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">項目名</label>
+                        <select id="title" class="w-full border rounded-lg p-2 text-sm bg-white">
+                            <option value="食費">食費</option>
+                            <option value="日用品">日用品</option>
+                            <option value="雑貨">雑貨</option>
+                            <option value="交際費">交際費</option>
+                            <option value="外食">外食</option>
+                            <option value="固定費">固定費</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">支払った人</label>
+                        <select id="payer" class="w-full border rounded-lg p-2 text-sm bg-white">
+                            <option value="ちーた">ちーた</option>
+                            <option value="あきた">あきた</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">金額 (円)</label>
+                        <input type="number" id="amount" placeholder="0" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">相手への請求割合</label>
+                        <select id="ratio" class="w-full border rounded-lg p-2 text-sm bg-white">
+                            <option value="0.5" selected>50%</option>
+                            <option value="1">100%</option>
+                            <option value="0.33">33%</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">支払い先など</label>
+                        <input type="text" id="memo" placeholder="例：マルエツ中野若宮店" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                    
+                    <!-- 登録ボタン -->
+                    <button type="button" onclick="saveItem()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow hover:bg-blue-700 transition text-sm">決定</button>
+                    
+                    <!-- 削除ボタン -->
+                    <button type="button" id="delete-btn-in-form" onclick="deleteCurrentEditItem()" class="w-full bg-white border border-red-500 text-red-500 font-bold py-3 rounded-xl hover:bg-red-50 transition text-sm" style="display: none;">削除</button>
+                </div>
+                <img src="favicon.png" alt="ファビコン" style="border-radius: 6px;">
+            </div>
+
+            <!-- 【画面2】一覧・精算結果画面 -->
+            <div id="view-list" class="space-y-6" style="display: none;">
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center space-y-1 shadow-sm">
+                    <span class="text-xs text-emerald-700 font-bold">精算結果</span>
+                    <div id="result-text" class="text-base font-bold text-gray-800">計算中...</div>
+                </div>
+
+                <!-- ちーたの表 -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
+                    <div class="bg-red-50 px-3 py-2 border-b border-red-100">
+                        <span class="font-bold text-xs text-red-700">ちーたの支払い</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse" style="font-size: 11px;">
+                            <thead>
+                                <tr class="bg-gray-50 border-b text-gray-600">
+                                    <th class="py-1 px-1 whitespace-nowrap">日付</th>
+                                    <th class="py-1 px-1 whitespace-nowrap">項目</th>
+                                    <th class="py-1 px-1 whitespace-nowrap">金額</th>
+                                    <th class="py-1 px-1 whitespace-nowrap">割合</th>
+                                    <th class="py-1 px-1 whitespace-nowrap">請求額</th>
+                                    <th class="py-1 px-1 w-full">支払い先など</th>
+                                    <th class="py-1 px-1 text-center whitespace-nowrap w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="chita-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="bg-gray-50 px-3 py-2 border-t text-right text-xs">
+                        請求額合計: <span id="chita-total" class="font-bold text-red-600 text-sm">¥0</span>
+                    </div>
+                </div>
+
+                <!-- あきたの表 -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-blue-100">
+                    <div class="bg-blue-50 px-3 py-2 border-b border-blue-100">
+                        <span class="font-bold text-xs text-blue-700">あきたの支払い</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse" style="font-size: 11px;">
+                            <thead>
+                                <tr class="bg-gray-50 border-b text-gray-600">
+                                    <th class="py-1 px-1 whitespace-nowrap">日付</th>
+                                    <th class="py-1 px-1 whitespace-nowrap">項目</th>
+                                    <th class="py-1 px-1 whitespace-nowrap">金額</th>
+                                    <th class="py-1 px-1 whitespace-nowrap">割合</th>
+                                    <th class="py-1 px-1 whitespace-nowrap">請求額</th>
+                                    <th class="py-1 px-1 w-full">支払い先など</th>
+                                    <th class="py-1 px-1 text-center whitespace-nowrap w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="akita-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="bg-gray-50 px-3 py-2 border-t text-right text-xs">
+                        請求額合計: <span id="akita-total" class="font-bold text-blue-600 text-sm">¥0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LINE風 下部固定タブバー -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg flex justify-around py-2 z-50 max-w-xl mx-auto">
+        <button type="button" id="tab-input" onclick="switchTab('input')" class="flex-1 flex flex-col items-center justify-center py-1 text-blue-600 font-bold transition">
+            <svg class="w-6 h-6 mb-0.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span class="text-[10px] pointer-events-none">入力・編集</span>
+        </button>
+        <button type="button" id="tab-list" onclick="switchTab('list')" class="flex-1 flex flex-col items-center justify-center py-1 text-gray-400 font-bold transition">
+            <svg class="w-6 h-6 mb-0.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"></path></svg>
+            <span class="text-[10px] pointer-events-none">一覧・精算</span>
+        </button>
+    </nav>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyor_lx9N-JZJuXknKI1DLCboIOK39f8WlX6R8s47e4n2jkf9vzMbauCDqYAoRUig/exec"; 
+        let items = [];
+
+        // 初期設定（日付は任意入力化のため自動設定を削除）
+        fetchData();
+
+        function switchTab(tabName) {
+            const viewInput = document.getElementById('view-input');
+            const viewList = document.getElementById('view-list');
+            const tabInput = document.getElementById('tab-input');
+            const tabList = document.getElementById('tab-list');
+
+            if (tabName === 'input') {
+                viewInput.style.display = 'block';
+                viewList.style.display = 'none';
+                tabInput.className = "flex-1 flex flex-col items-center justify-center py-1 text-blue-600 font-bold transition";
+                tabList.className = "flex-1 flex flex-col items-center justify-center py-1 text-gray-400 font-bold transition";
+            } else {
+                viewInput.style.display = 'none';
+                viewList.style.display = 'block';
+                tabList.className = "flex-1 flex flex-col items-center justify-center py-1 text-blue-600 font-bold transition";
+                tabInput.className = "flex-1 flex flex-col items-center justify-center py-1 text-gray-400 font-bold transition";
+                fetchData();
+            }
+        }
+
+        // 左右スワイプ（タッチ操作）の検知処理
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function fetchData() {
+            if (GAS_URL.includes("YOUR_WEB_APP_URL")) return;
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            fetch(GAS_URL)
+                .then(res => res.json())
+                .then(data => {
+                    items = data.map(item => {
+                        let formattedDate = '';
+                        if (item.date) {
+                            const d = new Date(item.date);
+                            if (!isNaN(d.getTime())) {
+                                const year = d.getUTCFullYear();
+                                const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+                                const day = String(d.getUTCDate()).padStart(2, '0');
+                                formattedDate = `${year}-${month}-${day}`;
+                            } else {
+                                formattedDate = String(item.date).split('T')[0];
+                            }
+                        }
+
+                        return {
+                            id: String(item.id),
+                            date: formattedDate,
+                            title: item.title,
+                            payer: item.payer,
+                            amount: Number(item.amount),
+                            ratio: Number(item.ratio),
+                            memo: item.memo !== undefined && item.memo !== null ? String(item.memo) : ''
+                        };
+                    });
+                    loading.style.display = 'none';
+                    renderList();
+                })
+                .catch(err => {
+                    console.error(err);
+                    loading.style.display = 'none';
+                });
+        }
+
+        function editItem(id) {
+            const item = items.find(i => String(i.id) === String(id));
+            if (!item) return;
+
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('form-title').innerText = 'データ修正画面';
+            document.getElementById('date').value = item.date || '';
+            document.getElementById('date-display').value = item.date || '';
+            document.getElementById('title').value = item.title;
+            document.getElementById('payer').value = item.payer;
+            document.getElementById('amount').value = item.amount;
+            document.getElementById('ratio').value = item.ratio;
+            document.getElementById('memo').value = item.memo;
+            document.getElementById('delete-btn-in-form').style.display = 'block';
+
+            switchTab('input');
+        }
+
+        function saveItem() {
+            const editId = document.getElementById('edit-id').value;
+            const date = document.getElementById('date').value;
+            const title = document.getElementById('title').value;
+            const payer = document.getElementById('payer').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const ratio = parseFloat(document.getElementById('ratio').value);
+            const memo = document.getElementById('memo').value.trim();
+
+            if (title === '固定費' && !memo) {
+                alert('固定費の場合は「支払い先など」を入力してください。');
+                return;
+            }
+
+            if (isNaN(amount) || amount <= 0) {
+                alert('金額を正しく入力してください。');
+                return;
+            }
+
+            const id = editId ? editId : String(Date.now());
+            const payload = { action: 'save', item: { id, date, title, payer, amount, ratio, memo } };
+
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(() => {
+                loading.style.display = 'none';
+                document.getElementById('edit-id').value = '';
+                document.getElementById('form-title').innerText = '新規データを登録';
+                document.getElementById('amount').value = '';
+                document.getElementById('memo').value = '';
+                document.getElementById('date').value = '';
+                document.getElementById('date-display').value = '';
+                document.getElementById('delete-btn-in-form').style.display = 'none';
+                switchTab('list');
+            })
+            .catch(err => {
+                console.error(err);
+                loading.style.display = 'none';
+                alert('保存に失敗しました。');
+            });
+        }
+
+        function deleteCurrentEditItem() {
+            const editId = document.getElementById('edit-id').value;
+            if (!editId) return;
+
+            if (confirm('削除しますか？')) {
+                const loading = document.getElementById('loading');
+                loading.style.display = 'block';
+
+                fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', id: editId })
+                })
+                .then(res => res.json())
+                .then(() => {
+                    loading.style.display = 'none';
+                    document.getElementById('edit-id').value = '';
+                    document.getElementById('form-title').innerText = '新規データを登録';
+                    document.getElementById('amount').value = '';
+                    document.getElementById('memo').value = '';
+                    document.getElementById('date').value = '';
+                    document.getElementById('date-display').value = '';
+                    document.getElementById('delete-btn-in-form').style.display = 'none';
+                    switchTab('list');
+                })
+                .catch(err => {
+                    console.error(err);
+                    loading.style.display = 'none';
+                    alert('削除に失敗しました。');
+                });
+            }
+        }
+
+        function createRowElement(item) {
+            const requestAmount = item.amount * item.ratio;
+            let ratioText = (item.ratio * 100) + '%';
+            if(item.ratio === 0.33) ratioText = '33%';
+
+            let shortDate = item.date || '';
+            if (item.date && item.date.includes('-')) {
+                const parts = item.date.split('-');
+                if (parts.length === 3) {
+                    shortDate = `${parts[1]}/${parts[2]}`;
+                }
+            }
+
+            const displayTitle = item.title === '固定費' ? '-' : item.title;
+
+            const tr = document.createElement('tr');
+            tr.className = "border-b hover:bg-gray-50";
+            tr.innerHTML = `
+                <td class="py-1 px-1 whitespace-nowrap">${shortDate}</td>
+                <td class="py-1 px-1 whitespace-nowrap font-medium">${displayTitle}</td>
+                <td class="py-1 px-1 text-right max-w-[70px] truncate whitespace-nowrap">¥${item.amount.toLocaleString()}</td>
+                <td class="py-1 px-1 text-center whitespace-nowrap">${ratioText}</td>
+                <td class="py-1 px-1 text-right whitespace-nowrap font-semibold">¥${Math.round(requestAmount).toLocaleString()}</td>
+                <td class="py-1 px-1 text-gray-500 text-[10px] max-w-[100px] truncate" title="${item.memo || ''}">${item.memo || ''}</td>
+                <td class="py-1 px-1 text-center whitespace-nowrap"><button type="button" onclick="editItem('${item.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px]" title="編集">✏️</button></td>
+            `;
+            return tr;
+        }
+
+        function createFixedHeaderRow() {
+            const tr = document.createElement('tr');
+            tr.className = "bg-emerald-100 border-b";
+            tr.innerHTML = `
+                <td colspan="7" class="py-1 px-2 text-emerald-800 font-bold text-left">固定費</td>
+            `;
+            return tr;
+        }
+
+        function renderList() {
+            const chitaTbody = document.getElementById('chita-tbody');
+            const akitaTbody = document.getElementById('akita-tbody');
+            chitaTbody.innerHTML = '';
+            akitaTbody.innerHTML = '';
+
+            const sortByDate = (a, b) => {
+                if (!a.date && !b.date) return 0;
+                if (!a.date) return 1;
+                if (!b.date) return -1;
+                return a.date.localeCompare(b.date);
+            };
+
+            const chitaVariable = items.filter(i => i.payer === 'ちーた' && i.title !== '固定費').sort(sortByDate);
+            const chitaFixed = items.filter(i => i.payer === 'ちーた' && i.title === '固定費').sort(sortByDate);
+
+            const akitaVariable = items.filter(i => i.payer === 'あきた' && i.title !== '固定費').sort(sortByDate);
+            const akitaFixed = items.filter(i => i.payer === 'あきた' && i.title === '固定費').sort(sortByDate);
+
+            let chitaCredit = 0;
+            let akitaCredit = 0;
+
+            // ちーたの描画
+            if (chitaVariable.length === 0 && chitaFixed.length === 0) {
+                chitaTbody.innerHTML = '<tr><td colspan="7" class="text-center p-3 text-gray-400">データなし</td></tr>';
+            } else {
+                chitaVariable.forEach(item => {
+                    chitaCredit += item.amount * item.ratio;
+                    chitaTbody.appendChild(createRowElement(item));
+                });
+
+                chitaTbody.appendChild(createFixedHeaderRow());
+
+                chitaFixed.forEach(item => {
+                    chitaCredit += item.amount * item.ratio;
+                    chitaTbody.appendChild(createRowElement(item));
+                });
+            }
+
+            // あきたの描画
+            if (akitaVariable.length === 0 && akitaFixed.length === 0) {
+                akitaTbody.innerHTML = '<tr><td colspan="7" class="text-center p-3 text-gray-400">データなし</td></tr>';
+            } else {
+                akitaVariable.forEach(item => {
+                    akitaCredit += item.amount * item.ratio;
+                    akitaTbody.appendChild(createRowElement(item));
+                });
+
+                akitaTbody.appendChild(createFixedHeaderRow());
+
+                akitaFixed.forEach(item => {
+                    akitaCredit += item.amount * item.ratio;
+                    akitaTbody.appendChild(createRowElement(item));
+                });
+            }
+
+            document.getElementById('chita-total').innerText = '¥' + Math.round(chitaCredit).toLocaleString();
+            document.getElementById('akita-total').innerText = '¥' + Math.round(akitaCredit).toLocaleString();
+
+            const diff = chitaCredit - akitaCredit;
+            const resultText = document.getElementById('result-text');
+
+            if (diff > 0) {
+                resultText.innerHTML = `あきたがちーたに <span class="text-emerald-700 font-extrabold text-lg">¥${Math.round(diff).toLocaleString()}</span> 支払う`;
+            } else if (diff < 0) {
+                resultText.innerHTML = `ちーたがあきたに <span class="text-emerald-700 font-extrabold text-lg">¥${Math.round(Math.abs(diff)).toLocaleString()}</span> 支払う`;
+            } else {
+                resultText.innerHTML = `現在、精算の差額はありません`;
+            }
+        }
+    </script>
+</body>
+</html>
