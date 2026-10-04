@@ -584,8 +584,10 @@
 
         function createRowElement(item) {
             const requestAmount = item.amount * item.ratio;
-            let ratioText = (item.ratio * 100) + '%';
-            if(item.ratio === 0.33) ratioText = '33%';
+            let ratioText = Math.round(item.ratio * 100) + '%';
+            if (Math.abs(item.ratio - 1/3) < 0.001 || item.ratio === 0.33) {
+                ratioText = '33%'; // 表示したい文字列（例: '33.3%' や '1/3' など）
+            }
 
             let shortDate = item.date || '';
             if (item.date && item.date.includes('-')) {
