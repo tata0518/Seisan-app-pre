@@ -17,15 +17,9 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* iOS等で入力時に自動ズームが起きないようフォーム要素の最小フォントサイズを16pxに設定 */
-        input, select, button {
+        /* 入力フォーム選択時の自動ズームのみ防止（表やボタンのサイズに影響を与えないよう限定） */
+        input:not([type="button"]):not([type="submit"]), select {
             font-size: 16px !important;
-        }
-        .text-xs-force {
-            font-size: 0.75rem !important;
-        }
-        .text-sm-force {
-            font-size: 0.875rem !important;
         }
     </style>
 </head>
@@ -49,39 +43,39 @@
                 </button>
             </div>
 
-            <p id="header-subtitle" class="text-xs-force text-gray-500 mt-1">出費を新規登録します。</p>
+            <p id="header-subtitle" class="text-xs text-gray-500 mt-1">出費を新規登録します。</p>
             
             <!-- サブナビゲーション（「今月に戻る」ボタン ＆ 「精算結果を見る」赤ボタン） -->
             <div id="month-nav" class="flex items-center justify-center gap-3 mt-3 px-2" style="display: none;">
-                <button type="button" id="current-month-btn" onclick="goCurrentMonth()" class="text-xs-force font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
+                <button type="button" id="current-month-btn" onclick="goCurrentMonth()" class="text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
                     今月に戻る
                 </button>
-                <button type="button" onclick="openResultModal()" class="text-xs-force font-bold bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg shadow-sm transition">
+                <button type="button" onclick="openResultModal()" class="text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg shadow-sm transition">
                     精算結果を見る
                 </button>
             </div>
         </header>
 
         <!-- ローディング表示 -->
-        <div id="loading" class="text-center py-2 text-xs-force text-gray-600 font-bold" style="display: none;">通信中</div>
+        <div id="loading" class="text-center py-2 text-xs text-gray-600 font-bold" style="display: none;">通信中</div>
 
         <!-- 左右スワイプを検知するコンテナ -->
         <div id="swipe-container">
             <!-- 【画面1】新規入力画面 -->
             <div id="view-input" class="space-y-4">
                 <div class="bg-white p-4 rounded-xl shadow-sm space-y-3">
-                    <h2 class="text-xs-force font-bold text-blue-600 mb-2">新規データ登録画面</h2>
+                    <h2 class="text-xs font-bold text-blue-600 mb-2">新規データ登録画面</h2>
                     
                     <div>
-                        <label class="block text-xs-force font-bold text-gray-600 mb-1">日付</label>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">日付</label>
                         <div class="relative">
                             <input type="date" id="date" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" onchange="document.getElementById('date-display').value = this.value;">
-                            <input type="text" id="date-display" readonly class="w-full box-border border rounded-lg px-3 py-2 text-sm-force bg-white pointer-events-none" placeholder="日付を選択">
+                            <input type="text" id="date-display" readonly class="w-full box-border border rounded-lg px-3 py-2 text-sm bg-white pointer-events-none" placeholder="日付を選択">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs-force font-bold text-gray-600 mb-1">項目名</label>
-                        <select id="title" class="w-full border rounded-lg p-2 text-sm-force bg-white">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">項目名</label>
+                        <select id="title" class="w-full border rounded-lg p-2 text-sm bg-white">
                             <option value="食費">食費</option>
                             <option value="日用品">日用品</option>
                             <option value="雑貨">雑貨</option>
@@ -92,31 +86,31 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs-force font-bold text-gray-600 mb-1">支払った人</label>
-                        <select id="payer" class="w-full border rounded-lg p-2 text-sm-force bg-white">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">支払った人</label>
+                        <select id="payer" class="w-full border rounded-lg p-2 text-sm bg-white">
                             <option value="ちーた">ちーた</option>
                             <option value="あきた">あきた</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs-force font-bold text-gray-600 mb-1">金額 (円)</label>
-                        <input type="number" id="amount" placeholder="0" class="w-full border rounded-lg p-2 text-sm-force">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">金額 (円)</label>
+                        <input type="number" id="amount" placeholder="0" class="w-full border rounded-lg p-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs-force font-bold text-gray-600 mb-1">相手への請求割合</label>
-                        <select id="ratio" class="w-full border rounded-lg p-2 text-sm-force bg-white">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">相手への請求割合</label>
+                        <select id="ratio" class="w-full border rounded-lg p-2 text-sm bg-white">
                             <option value="0.5" selected>50%</option>
                             <option value="1">100%</option>
                             <option value="0.33">33%</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs-force font-bold text-gray-600 mb-1">支払い先など</label>
-                        <input type="text" id="memo" placeholder="例：マルエツ中野若宮店" class="w-full border rounded-lg p-2 text-sm-force">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">支払い先など</label>
+                        <input type="text" id="memo" placeholder="例：マルエツ中野若宮店" class="w-full border rounded-lg p-2 text-sm">
                     </div>
                     
                     <!-- 登録ボタン -->
-                    <button type="button" onclick="saveItem(false)" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow hover:bg-blue-700 transition text-sm-force">決定</button>
+                    <button type="button" onclick="saveItem(false)" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow hover:bg-blue-700 transition text-sm">決定</button>
                 </div>
                 <img src="favicon.png" alt="ファビコン" style="border-radius: 6px;">
             </div>
@@ -127,7 +121,7 @@
                 <!-- ちーたの表 -->
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
                     <div class="bg-red-50 px-3 py-2 border-b border-red-100">
-                        <span class="font-bold text-xs-force text-red-700">ちーたの支払い</span>
+                        <span class="font-bold text-xs text-red-700">ちーたの支払い</span>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse" style="font-size: 11px;">
@@ -145,15 +139,15 @@
                             <tbody id="chita-tbody"></tbody>
                         </table>
                     </div>
-                    <div class="bg-gray-50 px-3 py-2 border-t text-right text-xs-force">
-                        請求額合計: <span id="chita-total" class="font-bold text-red-600 text-sm-force">¥0</span>
+                    <div class="bg-gray-50 px-3 py-2 border-t text-right text-xs">
+                        請求額合計: <span id="chita-total" class="font-bold text-red-600 text-sm">¥0</span>
                     </div>
                 </div>
 
                 <!-- あきたの表 -->
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-blue-100">
                     <div class="bg-blue-50 px-3 py-2 border-b border-blue-100">
-                        <span class="font-bold text-xs-force text-blue-700">あきたの支払い</span>
+                        <span class="font-bold text-xs text-blue-700">あきたの支払い</span>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse" style="font-size: 11px;">
@@ -171,8 +165,8 @@
                             <tbody id="akita-tbody"></tbody>
                         </table>
                     </div>
-                    <div class="bg-gray-50 px-3 py-2 border-t text-right text-xs-force">
-                        請求額合計: <span id="akita-total" class="font-bold text-blue-600 text-sm-force">¥0</span>
+                    <div class="bg-gray-50 px-3 py-2 border-t text-right text-xs">
+                        請求額合計: <span id="akita-total" class="font-bold text-blue-600 text-sm">¥0</span>
                     </div>
                 </div>
             </div>
@@ -183,16 +177,16 @@
     <div id="result-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display: none;">
         <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-xl space-y-4 text-center">
             <div class="flex justify-between items-center border-b pb-2">
-                <h2 class="text-xs-force font-bold text-rose-700">精算結果</h2>
+                <h2 class="text-xs font-bold text-rose-700">精算結果</h2>
                 <button type="button" onclick="closeResultModal()" class="text-gray-400 hover:text-gray-600 font-bold text-base px-1">&times;</button>
             </div>
             
             <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl text-center space-y-1 shadow-sm">
-                <span class="text-xs-force text-rose-700 font-bold" id="result-modal-month-title">精算結果</span>
+                <span class="text-xs text-rose-700 font-bold" id="result-modal-month-title">精算結果</span>
                 <div id="result-text" class="text-base font-bold text-gray-800">計算中...</div>
             </div>
 
-            <button type="button" onclick="closeResultModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded-xl text-xs-force transition">
+            <button type="button" onclick="closeResultModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded-xl text-xs transition">
                 閉じる
             </button>
         </div>
@@ -202,22 +196,22 @@
     <div id="edit-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display: none;">
         <div class="bg-white w-full max-w-md rounded-xl p-4 shadow-xl space-y-3 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
-                <h2 class="text-xs-force font-bold text-blue-600">データ修正画面</h2>
+                <h2 class="text-xs font-bold text-blue-600">データ修正画面</h2>
                 <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 font-bold text-base px-1">&times;</button>
             </div>
             
             <input type="hidden" id="edit-id" value="">
             
             <div>
-                <label class="block text-xs-force font-bold text-gray-600 mb-1">日付</label>
+                <label class="block text-xs font-bold text-gray-600 mb-1">日付</label>
                 <div class="relative">
                     <input type="date" id="modal-date" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" onchange="document.getElementById('modal-date-display').value = this.value;">
-                    <input type="text" id="modal-date-display" readonly class="w-full box-border border rounded-lg px-3 py-2 text-sm-force bg-white pointer-events-none" placeholder="日付を選択">
+                    <input type="text" id="modal-date-display" readonly class="w-full box-border border rounded-lg px-3 py-2 text-sm bg-white pointer-events-none" placeholder="日付を選択">
                 </div>
             </div>
             <div>
-                <label class="block text-xs-force font-bold text-gray-600 mb-1">項目名</label>
-                <select id="modal-title" class="w-full border rounded-lg p-2 text-sm-force bg-white">
+                <label class="block text-xs font-bold text-gray-600 mb-1">項目名</label>
+                <select id="modal-title" class="w-full border rounded-lg p-2 text-sm bg-white">
                     <option value="食費">食費</option>
                     <option value="日用品">日用品</option>
                     <option value="雑貨">雑貨</option>
@@ -228,34 +222,34 @@
                 </select>
             </div>
             <div>
-                <label class="block text-xs-force font-bold text-gray-600 mb-1">支払った人</label>
-                <select id="modal-payer" class="w-full border rounded-lg p-2 text-sm-force bg-white">
+                <label class="block text-xs font-bold text-gray-600 mb-1">支払った人</label>
+                <select id="modal-payer" class="w-full border rounded-lg p-2 text-sm bg-white">
                     <option value="ちーた">ちーた</option>
                     <option value="あきた">あきた</option>
                 </select>
             </div>
             <div>
-                <label class="block text-xs-force font-bold text-gray-600 mb-1">金額 (円)</label>
-                <input type="number" id="modal-amount" placeholder="0" class="w-full border rounded-lg p-2 text-sm-force">
+                <label class="block text-xs font-bold text-gray-600 mb-1">金額 (円)</label>
+                <input type="number" id="modal-amount" placeholder="0" class="w-full border rounded-lg p-2 text-sm">
             </div>
             <div>
-                <label class="block text-xs-force font-bold text-gray-600 mb-1">相手への請求割合</label>
-                <select id="modal-ratio" class="w-full border rounded-lg p-2 text-sm-force bg-white">
+                <label class="block text-xs font-bold text-gray-600 mb-1">相手への請求割合</label>
+                <select id="modal-ratio" class="w-full border rounded-lg p-2 text-sm bg-white">
                     <option value="0.5" selected>50%</option>
                     <option value="1">100%</option>
                     <option value="0.33">33%</option>
                 </select>
             </div>
             <div>
-                <label class="block text-xs-force font-bold text-gray-600 mb-1">支払い先など</label>
-                <input type="text" id="modal-memo" placeholder="例：マルエツ中野若宮店" class="w-full border rounded-lg p-2 text-sm-force">
+                <label class="block text-xs font-bold text-gray-600 mb-1">支払い先など</label>
+                <input type="text" id="modal-memo" placeholder="例：マルエツ中野若宮店" class="w-full border rounded-lg p-2 text-sm">
             </div>
             
             <div class="space-y-2 pt-1">
                 <!-- 更新ボタン -->
-                <button type="button" onclick="saveItem(true)" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow hover:bg-blue-700 transition text-sm-force">更新</button>
+                <button type="button" onclick="saveItem(true)" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow hover:bg-blue-700 transition text-sm">更新</button>
                 <!-- 削除ボタン -->
-                <button type="button" onclick="deleteCurrentEditItem()" class="w-full bg-white border border-red-500 text-red-500 font-bold py-2.5 rounded-xl hover:bg-red-50 transition text-sm-force">削除</button>
+                <button type="button" onclick="deleteCurrentEditItem()" class="w-full bg-white border border-red-500 text-red-500 font-bold py-2.5 rounded-xl hover:bg-red-50 transition text-sm">削除</button>
             </div>
         </div>
     </div>
@@ -311,10 +305,10 @@
 
                 if (isCurrentMonth) {
                     currentMonthBtn.disabled = true;
-                    currentMonthBtn.className = "text-xs-force font-bold bg-gray-100 text-gray-400 border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm cursor-not-allowed";
+                    currentMonthBtn.className = "text-xs font-bold bg-gray-100 text-gray-400 border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm cursor-not-allowed";
                 } else {
                     currentMonthBtn.disabled = false;
-                    currentMonthBtn.className = "text-xs-force font-bold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer transition";
+                    currentMonthBtn.className = "text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer transition";
                 }
             }
         }
@@ -386,13 +380,10 @@
         });
 
         function handleSwipe() {
-            // タップ等でなくしっかりスワイプした場合のみ発動
             if (Math.abs(touchEndX - touchStartX) > 60) {
                 if (touchEndX < touchStartX) {
-                    // 左スワイプ（一覧タブへ）
                     switchTab('list');
                 } else if (touchEndX > touchStartX) {
-                    // 右スワイプ（入力タブへ）
                     switchTab('input');
                 }
             }
