@@ -30,8 +30,8 @@
     <div class="max-w-xl mx-auto p-4">
         <!-- 動的ヘッダー -->
         <header class="mb-4 text-center">
-            <!-- タイトルと左右の月移動ボタン（一覧画面時） -->
-            <div class="flex items-center justify-center gap-2">
+            <!-- タイトルと左右の月移動ボタン＆⚙️設定ボタン（一覧画面時） -->
+            <div class="relative flex items-center justify-center gap-2">
                 <button type="button" id="prev-month-btn" onclick="changeMonth(-1)" class="text-gray-600 hover:text-gray-900 font-bold p-1 text-base rounded" style="display: none;" title="前月">
                     ◀︎
                 </button>
@@ -40,6 +40,11 @@
                 
                 <button type="button" id="next-month-btn" onclick="changeMonth(1)" class="text-gray-600 hover:text-gray-900 font-bold p-1 text-base rounded" style="display: none;" title="次月">
                     ▶︎
+                </button>
+
+                <!-- ⚙️ 設定ボタン -->
+                <button type="button" id="settings-btn" onclick="openSettingsModal()" class="absolute right-0 text-gray-600 hover:text-gray-900 p-1 text-lg" style="display: none;" title="設定">
+                    ⚙️
                 </button>
             </div>
 
@@ -56,10 +61,8 @@
             </div>
         </header>
 
-            <!-- ローディング表示 -->
-            <div id="loading" class="text-center w-full my-4">
-                <img src="korokuri4.png" alt="コロクリ" class="inline-block rounded-md" width="150" height="30">
-            </div>
+        <!-- ローディング表示 -->
+        <div id="loading" class="text-center py-2 text-xs text-gray-600 font-bold" style="display: none;">通信中</div>
 
         <!-- 左右スワイプを検知するコンテナ -->
         <div id="swipe-container">
@@ -114,13 +117,14 @@
                     <!-- 登録ボタン -->
                     <button type="button" onclick="saveItem(false)" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow hover:bg-blue-700 transition text-sm">決定</button>
                 </div>
+                <img src="favicon.png" alt="ファビコン" style="border-radius: 6px;">
             </div>
 
             <!-- 【画面2】一覧・精算結果画面 -->
             <div id="view-list" class="space-y-6" style="display: none;">
 
                 <!-- ちーたの表 -->
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
+                <div id="chita-card" class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
                     <div class="bg-red-50 px-3 py-2 border-b border-red-100">
                         <span class="font-bold text-xs text-red-700">ちーたの支払い</span>
                     </div>
@@ -146,7 +150,7 @@
                 </div>
 
                 <!-- あきたの表 -->
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-blue-100">
+                <div id="akita-card" class="bg-white rounded-xl shadow-sm overflow-hidden border border-blue-100">
                     <div class="bg-blue-50 px-3 py-2 border-b border-blue-100">
                         <span class="font-bold text-xs text-blue-700">あきたの支払い</span>
                     </div>
@@ -170,7 +174,30 @@
                         請求額合計: <span id="akita-total" class="font-bold text-blue-600 text-sm">¥0</span>
                     </div>
                 </div>
+
             </div>
+        </div>
+    </div>
+
+    <!-- 設定用ポップアップ（モーダル） -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h2 class="text-xs font-bold text-gray-700">表示設定</h2>
+                <button type="button" onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600 font-bold text-base px-1">&times;</button>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-2">一覧画面の上部に表示する人</label>
+                <select id="display-order-select" class="w-full border rounded-lg p-2 text-sm bg-white">
+                    <option value="chita">ちーた を上に表示</option>
+                    <option value="akita">あきた を上に表示</option>
+                </select>
+            </div>
+
+            <button type="button" onclick="saveSettings()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs transition">
+                保存する
+            </button>
         </div>
     </div>
 
@@ -271,6 +298,9 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyor_lx9N-JZJuXknKI1DLCboIOK39f8WlX6R8s47e4n2jkf9vzMbauCDqYAoRUig/exec"; 
         let items = [];
 
+        // 表示順の設定管理（デフォルトはちーたが上）
+        let displayOrder = localStorage.getItem('displayOrder') || 'chita';
+
         // 現在選択中の年月管理（デフォルト：今月）
         const now = new Date();
         let currentYear = now.getFullYear();
@@ -278,12 +308,30 @@
 
         fetchData();
 
+        // 設定モーダル制御
+        function openSettingsModal() {
+            document.getElementById('display-order-select').value = displayOrder;
+            document.getElementById('settings-modal').style.display = 'flex';
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        function saveSettings() {
+            displayOrder = document.getElementById('display-order-select').value;
+            localStorage.setItem('displayOrder', displayOrder);
+            closeSettingsModal();
+            renderList();
+        }
+
         function updateHeaderUI(tabName) {
             const headerTitle = document.getElementById('header-title');
             const headerSubtitle = document.getElementById('header-subtitle');
             const monthNav = document.getElementById('month-nav');
             const prevBtn = document.getElementById('prev-month-btn');
             const nextBtn = document.getElementById('next-month-btn');
+            const settingsBtn = document.getElementById('settings-btn');
 
             if (tabName === 'input') {
                 headerTitle.innerText = '入力';
@@ -291,6 +339,7 @@
                 monthNav.style.display = 'none';
                 prevBtn.style.display = 'none';
                 nextBtn.style.display = 'none';
+                settingsBtn.style.display = 'none';
             } else {
                 headerTitle.innerText = `${currentMonth}月精算一覧`;
                 headerSubtitle.innerText = `${currentYear}年${currentMonth}月の精算データの一覧です。`;
@@ -298,6 +347,7 @@
                 monthNav.style.display = 'flex';
                 prevBtn.style.display = 'inline-block';
                 nextBtn.style.display = 'inline-block';
+                settingsBtn.style.display = 'block';
 
                 // 今月判定を行い「今月に戻る」ボタンの活性/非活性を切り替え
                 const today = new Date();
@@ -570,6 +620,19 @@
         }
 
         function renderList() {
+            const viewList = document.getElementById('view-list');
+            const chitaCard = document.getElementById('chita-card');
+            const akitaCard = document.getElementById('akita-card');
+
+            // 表示順の設定に基づきDOM要素の順序を更新
+            if (displayOrder === 'akita') {
+                viewList.appendChild(akitaCard);
+                viewList.appendChild(chitaCard);
+            } else {
+                viewList.appendChild(chitaCard);
+                viewList.appendChild(akitaCard);
+            }
+
             const chitaTbody = document.getElementById('chita-tbody');
             const akitaTbody = document.getElementById('akita-tbody');
             chitaTbody.innerHTML = '';
