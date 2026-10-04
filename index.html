@@ -2,16 +2,16 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <!-- ズーム制御対応のviewport指定 -->
+  <!-- 1. 自動ズーム・ピンチ操作を制御するviewport指定 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>家計簿・精算アプリ</title>
   <style>
     /* ==========================================
-       1. ダブルタップズーム防止・基本スタイル
+       1. ダブルタップズーム防止＆全体基本スタイル
        ========================================== */
     * {
       box-sizing: border-box;
-      /* ダブルタップによるズーム動作を防止 */
+      /* ダブルタップによるズーム動作を完全に防止 */
       touch-action: manipulation;
     }
 
@@ -24,16 +24,16 @@
     }
 
     .container {
-      max-width: 500px;
+      max-width: 480px;
       margin: 0 auto;
-      background: #fff;
+      background: #ffffff;
       padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
     }
 
     /* ==========================================
-       2. ヘッダー（月移動ボタンを左右に配置）
+       2. 月移動ナビゲーション（タイトルの左右にボタン）
        ========================================== */
     .header-nav {
       display: flex;
@@ -46,64 +46,66 @@
       margin: 0;
       font-size: 1.25rem;
       font-weight: 700;
+      color: #1e293b;
     }
 
     .nav-btn {
-      background: #e2e8f0;
-      border: none;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
       border-radius: 8px;
       width: 40px;
       height: 40px;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
+      color: #3b82f6;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s;
+      font-weight: bold;
     }
 
     .nav-btn:active {
-      background: #cbd5e1;
+      background: #e2e8f0;
     }
 
     /* ==========================================
-       3. コントロールエリア（今月に戻る / 精算結果）
+       3. アクションボタン（今月に戻る / 精算結果を見る）
        ========================================== */
     .control-actions {
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 12px;
+      margin-bottom: 24px;
     }
 
     .btn {
       flex: 1;
       padding: 12px 8px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       font-weight: bold;
-      font-size: 0.85rem; /* 小さめサイズ指定 */
+      font-size: 0.9rem;
       cursor: pointer;
       text-align: center;
-      transition: opacity 0.2s, background-color 0.2s;
+      transition: background-color 0.2s, opacity 0.2s;
     }
 
-    /* 「今月に戻る」ボタン（非活性状態のデザイン） */
+    /* 「今月に戻る」ボタン（通常／非活性） */
     .btn-secondary {
-      background-color: #94a3b8;
-      color: #fff;
+      background-color: #e2e8f0;
+      color: #475569;
     }
 
     .btn-secondary:disabled {
-      background-color: #e2e8f0;
-      color: #94a3b8;
+      background-color: #f1f5f9;
+      color: #cbd5e1;
       cursor: not-allowed;
-      opacity: 0.7;
+      opacity: 0.8;
     }
 
-    /* 「精算結果を見る」赤系ボタン */
+    /* 赤い「精算結果を見る」ボタン */
     .btn-danger {
       background-color: #ef4444;
-      color: #fff;
+      color: #ffffff;
     }
 
     .btn-danger:active {
@@ -111,18 +113,19 @@
     }
 
     /* ==========================================
-       4. フォーム要素（自動ズーム防止対応）
-       iOS Safariは16px未満のInput要素フォーカス時に自動ズームするため、
-       基本サイズを16pxにしつつ、小さく見せる調整を行います。
+       4. 入力フォーム（フォーカス時の自動ズーム防止）
+       ※iOS Safariは16px未満のInputでズームするため、
+         font-size: 16px !important を指定しています。
        ========================================== */
     .form-group {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .form-group label {
       display: block;
-      font-size: 0.8rem;
-      margin-bottom: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
       color: #64748b;
     }
 
@@ -130,23 +133,106 @@
     input[type="number"],
     select {
       width: 100%;
-      /* フォーカス時ズーム回避のためフォントサイズ16pxを確保 */
-      font-size: 16px;
-      padding: 8px 12px;
+      font-size: 16px !important; /* フォーカス時のズーム防止 */
+      padding: 10px 12px;
       border: 1px solid #cbd5e1;
-      border-radius: 6px;
+      border-radius: 8px;
       outline: none;
+      background-color: #fff;
     }
 
-    /* 表示文字を小さく見せたい場合の個別調整 */
-    .small-input {
-      font-size: 16px !important; /* iOSズーム防止 */
-      transform-origin: left center;
-      padding: 6px 10px;
+    input:focus, select:focus {
+      border-color: #3b82f6;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background-color: #3b82f6;
+      color: #fff;
+      margin-top: 8px;
+      padding: 12px;
+    }
+
+    .btn-primary:active {
+      background-color: #2563eb;
     }
 
     /* ==========================================
-       5. ポップアップ（モーダル）デザイン
+       5. 履歴リスト表示エリア
+       ========================================== */
+    .list-container {
+      margin-top: 24px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 16px;
+    }
+
+    .list-title {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: #334155;
+    }
+
+    .item-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .item-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .item-name {
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    .item-payer {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .item-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .item-amount {
+      font-weight: bold;
+      color: #0f172a;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    .delete-btn:hover {
+      color: #ef4444;
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      padding: 20px 0;
+    }
+
+    /* ==========================================
+       6. 精算結果モーダル（ポップアップ）
        ========================================== */
     .modal-overlay {
       display: none;
@@ -168,23 +254,23 @@
     .modal-content {
       background: #fff;
       padding: 24px;
-      border-radius: 12px;
+      border-radius: 16px;
       width: 90%;
       max-width: 400px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
       animation: modalFadeIn 0.2s ease-out;
     }
 
     @keyframes modalFadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
+      from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     .modal-header {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: bold;
       margin-bottom: 16px;
-      color: #1e293b;
+      color: #0f172a;
       border-bottom: 2px solid #f1f5f9;
       padding-bottom: 8px;
     }
@@ -195,28 +281,31 @@
       margin-bottom: 20px;
     }
 
-    .result-item {
+    .result-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 8px;
+      color: #334155;
     }
 
-    .result-total {
-      font-weight: bold;
-      font-size: 1.1rem;
-      color: #ef4444;
+    .result-highlight {
+      margin-top: 12px;
+      padding-top: 12px;
       border-top: 1px dashed #cbd5e1;
-      padding-top: 8px;
-      margin-top: 8px;
+      font-weight: bold;
+      font-size: 1.05rem;
+      color: #ef4444;
+      display: flex;
+      justify-content: space-between;
     }
 
     .modal-close-btn {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       background: #64748b;
       color: #fff;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       font-weight: bold;
       font-size: 0.9rem;
       cursor: pointer;
@@ -226,54 +315,60 @@
 <body>
 
   <div class="container">
-    <!-- タイトルの左右に月移動ボタンを配置 -->
+    <!-- 月移動ナビゲーション（タイトルの左右に配置） -->
     <div class="header-nav">
       <button class="nav-btn" id="prevMonthBtn">＜</button>
-      <h2 id="currentMonthDisplay">2026年10月</h2>
+      <h2 id="currentMonthDisplay">----年--月</h2>
       <button class="nav-btn" id="nextMonthBtn">＞</button>
     </div>
 
-    <!-- 「今月に戻る」と赤色の「精算結果を見る」ボタンを並列配置 -->
+    <!-- アクションボタン（「今月に戻る」＆「精算結果を見る」） -->
     <div class="control-actions">
       <button class="btn btn-secondary" id="backToCurrentBtn" disabled>今月に戻る</button>
       <button class="btn btn-danger" id="openResultModalBtn">精算結果を見る</button>
     </div>
 
-    <!-- 入力フォーム例 -->
+    <!-- 入力フォームエリア -->
+    <div class="form-group">
+      <label for="payer">支払者</label>
+      <select id="payer">
+        <option value="Aさん">Aさん</option>
+        <option value="Bさん">Bさん</option>
+      </select>
+    </div>
+
     <div class="form-group">
       <label for="item">項目名</label>
-      <input type="text" id="item" class="small-input" placeholder="例: 食費">
+      <input type="text" id="item" placeholder="例: 食費">
     </div>
+
     <div class="form-group">
-      <label for="amount">金額</label>
-      <input type="number" id="amount" class="small-input" placeholder="例: 3000">
+      <label for="amount">金額（円）</label>
+      <input type="number" id="amount" placeholder="例: 3000">
+    </div>
+
+    <button class="btn btn-primary" id="addBtn">追加する</button>
+
+    <!-- 履歴・データ一覧エリア -->
+    <div class="list-container">
+      <div class="list-title">今月の入力履歴</div>
+      <div id="itemList"></div>
     </div>
   </div>
 
-  <!-- 精算結果表示用モーダル（ポップアップ） -->
+  <!-- 精算結果ポップアップ（モーダル） -->
   <div class="modal-overlay" id="resultModal">
     <div class="modal-content">
       <div class="modal-header">精算結果</div>
-      <div class="modal-body">
-        <div class="result-item">
-          <span>Aさんの支払合計:</span>
-          <span>¥12,000</span>
-        </div>
-        <div class="result-item">
-          <span>Bさんの支払合計:</span>
-          <span>¥8,000</span>
-        </div>
-        <div class="result-item result-total">
-          <span>差額精算:</span>
-          <span>Bさん ➔ Aさんへ ¥2,000</span>
-        </div>
+      <div class="modal-body" id="modalBody">
+        <!-- JSで計算結果が挿入されます -->
       </div>
       <button class="modal-close-btn" id="closeModalBtn">閉じる</button>
     </div>
   </div>
 
   <script>
-    // 現在選択中の年月管理
+    // 日付・年月管理
     const today = new Date();
     const realYear = today.getFullYear();
     const realMonth = today.getMonth(); // 0-indexed
@@ -281,7 +376,10 @@
     let viewYear = realYear;
     let viewMonth = realMonth;
 
-    // DOM要素の取得
+    // データ保存用オブジェクト ({ "2026-9": [ ... ] })
+    let db = JSON.parse(localStorage.getItem('kakeibo_db') || '{}');
+
+    // DOM要素
     const currentMonthDisplay = document.getElementById('currentMonthDisplay');
     const prevMonthBtn = document.getElementById('prevMonthBtn');
     const nextMonthBtn = document.getElementById('nextMonthBtn');
@@ -290,14 +388,134 @@
     const closeModalBtn = document.getElementById('closeModalBtn');
     const resultModal = document.getElementById('resultModal');
 
-    // 表示更新関数
-    function updateDisplay() {
-      // タイトル更新
+    const payerInput = document.getElementById('payer');
+    const itemInput = document.getElementById('item');
+    const amountInput = document.getElementById('amount');
+    const addBtn = document.getElementById('addBtn');
+    const itemList = document.getElementById('itemList');
+    const modalBody = document.getElementById('modalBody');
+
+    // キー文字列取得 (例: "2026-9")
+    function getMonthKey() {
+      return `${viewYear}-${viewMonth}`;
+    }
+
+    // 表示更新メイン関数
+    function render() {
+      // 1. タイトル更新
       currentMonthDisplay.textContent = `${viewYear}年${viewMonth + 1}月`;
 
-      // 当月かどうかを判定し、「今月に戻る」ボタンの活性/非活性を切替
+      // 2. 「今月に戻る」ボタン活性/非活性判定
       const isCurrentMonth = (viewYear === realYear && viewMonth === realMonth);
       backToCurrentBtn.disabled = isCurrentMonth;
+
+      // 3. 履歴リスト描画
+      const key = getMonthKey();
+      const items = db[key] || [];
+      itemList.innerHTML = '';
+
+      if (items.length === 0) {
+        itemList.innerHTML = '<div class="empty-msg">この月のデータはありません</div>';
+      } else {
+        items.forEach((item, index) => {
+          const card = document.createElement('div');
+          card.className = 'item-card';
+          card.innerHTML = `
+            <div class="item-info">
+              <span class="item-name">${escapeHtml(item.name)}</span>
+              <span class="item-payer">${escapeHtml(item.payer)}</span>
+            </div>
+            <div class="item-right">
+              <span class="item-amount">¥${item.amount.toLocaleString()}</span>
+              <button class="delete-btn" onclick="deleteItem(${index})">✕</button>
+            </div>
+          `;
+          itemList.appendChild(card);
+        });
+      }
+    }
+
+    // データ追加
+    addBtn.addEventListener('click', () => {
+      const payer = payerInput.value;
+      const name = itemInput.value.trim();
+      const amount = parseInt(amountInput.value, 10);
+
+      if (!name || isNaN(amount) || amount <= 0) {
+        alert('項目名と正しい金額を入力してください');
+        return;
+      }
+
+      const key = getMonthKey();
+      if (!db[key]) db[key] = [];
+
+      db[key].push({ payer, name, amount });
+      localStorage.setItem('kakeibo_db', JSON.stringify(db));
+
+      // フォームリセット
+      itemInput.value = '';
+      amountInput.value = '';
+
+      render();
+    });
+
+    // データ削除
+    window.deleteItem = function(index) {
+      const key = getMonthKey();
+      if (db[key]) {
+        db[key].splice(index, 1);
+        localStorage.setItem('kakeibo_db', JSON.stringify(db));
+        render();
+      }
+    };
+
+    // 精算計算＆モーダル生成
+    function showSettlementModal() {
+      const key = getMonthKey();
+      const items = db[key] || [];
+
+      let totalA = 0;
+      let totalB = 0;
+
+      items.forEach(item => {
+        if (item.payer === 'Aさん') totalA += item.amount;
+        if (item.payer === 'Bさん') totalB += item.amount;
+      });
+
+      const total = totalA + totalB;
+      const targetPerPerson = Math.floor(total / 2);
+      const diff = totalA - totalB;
+
+      let resultHTML = `
+        <div class="result-row"><span>合計支出:</span><span>¥${total.toLocaleString()}</span></div>
+        <div class="result-row"><span>Aさんの支払額:</span><span>¥${totalA.toLocaleString()}</span></div>
+        <div class="result-row"><span>Bさんの支払額:</span><span>¥${totalB.toLocaleString()}</span></div>
+      `;
+
+      if (diff > 0) {
+        const payAmount = Math.floor(diff / 2);
+        resultHTML += `
+          <div class="result-highlight">
+            <span>精算内容:</span>
+            <span>Bさん ➔ Aさんへ ¥${payAmount.toLocaleString()}</span>
+          </div>`;
+      } else if (diff < 0) {
+        const payAmount = Math.floor(Math.abs(diff) / 2);
+        resultHTML += `
+          <div class="result-highlight">
+            <span>精算内容:</span>
+            <span>Aさん ➔ Bさんへ ¥${payAmount.toLocaleString()}</span>
+          </div>`;
+      } else {
+        resultHTML += `
+          <div class="result-highlight">
+            <span>精算内容:</span>
+            <span>精算なし（お互い均等）</span>
+          </div>`;
+      }
+
+      modalBody.innerHTML = resultHTML;
+      resultModal.classList.add('active');
     }
 
     // 月移動イベント
@@ -307,7 +525,7 @@
         viewMonth = 11;
         viewYear--;
       }
-      updateDisplay();
+      render();
     });
 
     nextMonthBtn.addEventListener('click', () => {
@@ -316,34 +534,32 @@
         viewMonth = 0;
         viewYear++;
       }
-      updateDisplay();
+      render();
     });
 
-    // 「今月に戻る」イベント
+    // 今月に戻るイベント
     backToCurrentBtn.addEventListener('click', () => {
       viewYear = realYear;
       viewMonth = realMonth;
-      updateDisplay();
+      render();
     });
 
-    // モーダル（精算結果ポップアップ）開閉処理
-    openResultModalBtn.addEventListener('click', () => {
-      resultModal.classList.add('active');
-    });
-
-    closeModalBtn.addEventListener('click', () => {
-      resultModal.classList.remove('active');
-    });
-
-    // モーダル背景タップで閉じる
+    // モーダルイベント
+    openResultModalBtn.addEventListener('click', showSettlementModal);
+    closeModalBtn.addEventListener('click', () => resultModal.classList.remove('active'));
     resultModal.addEventListener('click', (e) => {
-      if (e.target === resultModal) {
-        resultModal.classList.remove('active');
-      }
+      if (e.target === resultModal) resultModal.classList.remove('active');
     });
 
-    // 初期化表示
-    updateDisplay();
+    // XSS対策用エスケープ
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+
+    // 初期化
+    render();
   </script>
 </body>
 </html>
