@@ -17,20 +17,31 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 入力フォーム選択時の自動ズームのみ防止（表やボタンのサイズに影響を与えないよう限定） */
+        /* 入力フォーム選択時の自動ズームのみ防止 */
         input:not([type="button"]):not([type="submit"]), select {
             font-size: 16px !important;
-
-        /* ▼ ここから追加（入力タブ時のスクロール不可設定） */
+        }
+    
+        /* ▼ 入力タブ時のスクロール＆バウンス（縦揺れ）を完全に防止 */
         body.no-scroll {
             overflow: hidden;
-            touch-action: none; /* スマホでの引っ張りスクロールなどを防止 */
+            position: fixed; /* 画面位置を完全に固める */
+            width: 100%;
+            height: 100%;
+            overscroll-behavior: none; /* スマホのゴムバンド効果を無効化 */
+        }
+    
+        /* 入力エリア自体も揺れないように固定 */
+        #view-input {
+            touch-action: pan-x; /* 横方向（スワイプ切り替え）のみ許可し、縦方向を禁止 */
+            overscroll-behavior-y: none;
         }
     </style>
-</head>
 
-<!-- 下部タブバーの分の余白 (pb-24) を確保 -->
-<body class="bg-gray-50 text-gray-800 pb-24 touch-manipulation">
+</head>
+    
+<!-- 修正後（no-scroll を追加） -->
+<body class="bg-gray-50 text-gray-800 pb-24 touch-manipulation no-scroll">
 
     <div class="max-w-xl mx-auto p-4">
         <!-- 動的ヘッダー -->
